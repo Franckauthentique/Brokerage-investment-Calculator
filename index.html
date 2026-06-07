@@ -3,1555 +3,657 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MacroTrader — Economic Forces Simulator</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<title>Compound Investment Calculator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #080c10;
-    --surface: #0d1318;
-    --card: #111820;
-    --border: #1e2d3d;
-    --accent-green: #00ff88;
-    --accent-red: #ff3355;
-    --accent-yellow: #ffd700;
-    --accent-blue: #00aaff;
-    --accent-orange: #ff7700;
-    --text: #c8d8e8;
-    --text-dim: #5a7a8a;
-    --text-bright: #eaf4ff;
-    --gdp-color: #00ff88;
-    --labour-color: #00aaff;
-    --inflation-color: #ff7700;
-  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --green: #00E5A0;
+    --green-dim: rgba(0,229,160,0.12);
+    --green-mid: rgba(0,229,160,0.35);
+    --bg: #0A0C0F;
+    --surface: #111318;
+    --surface2: #181C22;
+    --border: rgba(255,255,255,0.07);
+    --text: #F0EEE8;
+    --muted: #6B7280;
+    --accent: #FFD166;
+  }
 
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'IBM Plex Sans', sans-serif;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
     min-height: 100vh;
     overflow-x: hidden;
   }
 
-  /* Grid noise texture */
+  /* Background grid */
   body::before {
     content: '';
     position: fixed;
     inset: 0;
     background-image:
-      linear-gradient(rgba(0,255,136,0.015) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,255,136,0.015) 1px, transparent 1px);
-    background-size: 40px 40px;
+      linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
     pointer-events: none;
     z-index: 0;
   }
 
   .container {
-    max-width: 1400px;
+    max-width: 980px;
     margin: 0 auto;
-    padding: 24px 20px;
+    padding: 3rem 2rem 5rem;
     position: relative;
     z-index: 1;
   }
 
-  /* HEADER */
-  header {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    margin-bottom: 32px;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 12px;
+  /* Header */
+  .header {
+    margin-bottom: 3rem;
   }
 
-  .logo {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 42px;
-    letter-spacing: 4px;
-    color: var(--text-bright);
-    line-height: 1;
-  }
-
-  .logo span { color: var(--accent-green); }
-
-  .tagline {
-    font-family: 'IBM Plex Mono', monospace;
+  .header-eyebrow {
+    font-family: 'DM Mono', monospace;
     font-size: 11px;
-    color: var(--text-dim);
-    letter-spacing: 2px;
+    letter-spacing: 0.18em;
+    color: var(--green);
     text-transform: uppercase;
-    margin-top: 4px;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
 
-  .status-bar {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    color: var(--text-dim);
-    text-align: right;
+  .header-eyebrow::after {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 1px;
+    background: var(--green);
+    opacity: 0.5;
   }
 
-  .status-dot {
-    display: inline-block;
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: var(--accent-green);
-    margin-right: 6px;
-    animation: pulse 2s infinite;
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3rem, 8vw, 6rem);
+    letter-spacing: 0.03em;
+    line-height: 0.9;
+    color: var(--text);
   }
 
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
+  h1 span {
+    color: var(--green);
   }
 
-  /* EXPLAINER SECTION */
-  .explainer-grid {
+  .header-sub {
+    margin-top: 1rem;
+    font-size: 15px;
+    color: var(--muted);
+    max-width: 460px;
+    line-height: 1.6;
+  }
+
+  /* Controls */
+  .controls {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 16px;
-    margin-bottom: 28px;
+    margin-bottom: 2rem;
   }
 
-  .explainer-card {
-    background: var(--card);
+  @media (max-width: 750px) {
+    .controls { grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (max-width: 500px) {
+    .controls { grid-template-columns: 1fr; }
+  }
+
+  .control-card {
+    background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 20px;
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+  }
+
+  .control-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  .control-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.8rem;
+    letter-spacing: 0.02em;
+    color: var(--green);
+    line-height: 1;
+    margin-bottom: 1rem;
+  }
+
+  .control-value span {
+    font-size: 1.4rem;
+    color: var(--muted);
+    margin-left: 2px;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+    position: relative;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--green);
+    cursor: pointer;
+    border: 3px solid var(--bg);
+    box-shadow: 0 0 0 1px var(--green);
+    transition: transform 0.15s;
+  }
+
+  input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--green);
+    cursor: pointer;
+    border: 3px solid var(--bg);
+    box-shadow: 0 0 0 1px var(--green);
+  }
+
+  .range-bounds {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    opacity: 0.6;
+  }
+
+  /* Stats */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 2rem;
+  }
+
+  @media (max-width: 700px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
     position: relative;
     overflow: hidden;
-    transition: border-color 0.3s;
+    transition: border-color 0.2s;
   }
 
-  .explainer-card::before {
+  .stat:hover {
+    border-color: rgba(0,229,160,0.2);
+  }
+
+  .stat::before {
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 2px;
+    background: var(--green);
+    opacity: 0;
+    transition: opacity 0.2s;
   }
 
-  .explainer-card.gdp::before { background: var(--gdp-color); }
-  .explainer-card.labour::before { background: var(--labour-color); }
-  .explainer-card.inflation::before { background: var(--inflation-color); }
-  .explainer-card.monetary::before { background: #aa55ff; }
-  .explainer-card.fiscal::before { background: var(--accent-yellow); }
+  .stat:hover::before { opacity: 1; }
 
-  .card-icon {
-    font-size: 28px;
-    margin-bottom: 10px;
-  }
-
-  .card-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 20px;
-    letter-spacing: 2px;
-    margin-bottom: 6px;
-  }
-
-  .card-title.gdp { color: var(--gdp-color); }
-  .card-title.labour { color: var(--labour-color); }
-  .card-title.inflation { color: var(--inflation-color); }
-  .card-title.monetary { color: #aa55ff; }
-  .card-title.fiscal { color: var(--accent-yellow); }
-
-  .card-subtitle {
-    font-family: 'IBM Plex Mono', monospace;
+  .stat-label {
+    font-family: 'DM Mono', monospace;
     font-size: 10px;
-    color: var(--text-dim);
-    letter-spacing: 1.5px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
     text-transform: uppercase;
-    margin-bottom: 10px;
+    margin-bottom: 0.5rem;
   }
 
-  .card-body {
-    font-size: 13px;
-    line-height: 1.7;
+  .stat-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.9rem;
+    letter-spacing: 0.02em;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .stat-value.positive { color: var(--green); }
+  .stat-value.accent { color: var(--accent); }
+
+  /* Chart */
+  .chart-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.75rem;
+    margin-bottom: 2rem;
+  }
+
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .chart-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem;
+    letter-spacing: 0.05em;
     color: var(--text);
   }
 
-  .card-body strong { color: var(--text-bright); }
-
-  /* RELATIONSHIP BOX */
-  .relationship-box {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 20px 24px;
-    margin-bottom: 28px;
-  }
-
-  .section-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    color: var(--text-dim);
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    margin-bottom: 14px;
-  }
-
-  .relationship-flow {
+  .legend {
     display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    font-size: 13px;
-    line-height: 1.6;
-  }
-
-  .flow-node {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 3px;
-    padding: 8px 14px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    text-align: center;
-  }
-
-  .flow-node.gdp { border-color: var(--gdp-color); color: var(--gdp-color); }
-  .flow-node.labour { border-color: var(--labour-color); color: var(--labour-color); }
-  .flow-node.inflation { border-color: var(--inflation-color); color: var(--inflation-color); }
-
-  .flow-arrow {
-    color: var(--text-dim);
-    font-size: 16px;
-  }
-
-  .flow-text {
-    font-size: 12px;
-    color: var(--text-dim);
-    font-style: italic;
-    flex-basis: 100%;
-    margin-top: 8px;
-    line-height: 1.6;
-  }
-
-  /* SIMULATOR */
-  .sim-wrapper {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    overflow: hidden;
-  }
-
-  .sim-header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 16px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .sim-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 22px;
-    letter-spacing: 3px;
-    color: var(--text-bright);
-  }
-
-  .reset-btn {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    padding: 7px 16px;
-    border-radius: 3px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .reset-btn:hover {
-    border-color: var(--accent-green);
-    color: var(--accent-green);
-  }
-
-  .scenario-btns {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .scenario-btn {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    padding: 6px 12px;
-    border-radius: 3px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .scenario-btn:hover { border-color: var(--accent-yellow); color: var(--accent-yellow); }
-  .scenario-btn.active { border-color: var(--accent-yellow); color: var(--accent-yellow); background: rgba(255,215,0,0.05); }
-
-  .sim-body {
-    display: grid;
-    grid-template-columns: 340px 1fr;
-    min-height: 520px;
-  }
-
-  @media (max-width: 800px) {
-    .sim-body { grid-template-columns: 1fr; }
-  }
-
-  /* SLIDERS PANEL */
-  .sliders-panel {
-    border-right: 1px solid var(--border);
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 28px;
-  }
-
-  .slider-group { }
-
-  .slider-label-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 8px;
-  }
-
-  .slider-name {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-
-  .slider-name.gdp { color: var(--gdp-color); }
-  .slider-name.labour { color: var(--labour-color); }
-  .slider-name.inflation { color: var(--inflation-color); }
-
-  .slider-value {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 22px;
-    letter-spacing: 1px;
-  }
-
-  .slider-desc {
-    font-size: 11px;
-    color: var(--text-dim);
-    margin-bottom: 10px;
-    line-height: 1.5;
-  }
-
-  .slider-track {
-    position: relative;
-    height: 6px;
-    background: var(--surface);
-    border-radius: 3px;
-    border: 1px solid var(--border);
-    margin-bottom: 6px;
-  }
-
-  .slider-fill {
-    position: absolute;
-    top: 0; left: 0; bottom: 0;
-    border-radius: 3px;
-    transition: width 0.1s;
-  }
-
-  input[type="range"] {
-    width: 100%;
-    appearance: none;
-    background: transparent;
-    cursor: pointer;
-    margin: 0;
-    display: block;
-  }
-
-  input[type="range"]::-webkit-slider-runnable-track {
-    height: 6px;
-    background: transparent;
-    border-radius: 3px;
-  }
-
-  input[type="range"]::-webkit-slider-thumb {
-    appearance: none;
-    width: 16px; height: 16px;
-    border-radius: 50%;
-    margin-top: -5px;
-    cursor: grab;
-    transition: transform 0.1s;
-    box-shadow: 0 0 8px currentColor;
-  }
-
-  input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.3); cursor: grabbing; }
-
-  input.gdp-slider::-webkit-slider-thumb { background: var(--gdp-color); }
-  input.labour-slider::-webkit-slider-thumb { background: var(--labour-color); }
-  input.inflation-slider::-webkit-slider-thumb { background: var(--inflation-color); }
-
-  .slider-ticks {
-    display: flex;
-    justify-content: space-between;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    color: var(--text-dim);
-    margin-top: 2px;
-  }
-
-  .divider { border: none; border-top: 1px solid var(--border); }
-
-  .policy-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    margin-bottom: 8px;
-    padding-bottom: 4px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .policy-indicator {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 3px;
-    padding: 10px 14px;
-    margin-bottom: 8px;
-  }
-
-  .policy-name {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    color: var(--text-dim);
-    margin-bottom: 4px;
-  }
-
-  .policy-value {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 17px;
-    letter-spacing: 1px;
-    transition: color 0.4s;
-  }
-
-  /* MARKETS PANEL */
-  .markets-panel {
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
     gap: 20px;
-  }
-
-  .markets-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 12px;
-  }
-
-  .market-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 14px 16px;
-    transition: border-color 0.4s;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .market-card::after {
-    content: '';
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 3px;
-    transition: background 0.4s;
-  }
-
-  .market-name {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    margin-bottom: 6px;
-  }
-
-  .market-icon { font-size: 18px; margin-bottom: 4px; display: block; }
-
-  .market-signal {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 20px;
-    letter-spacing: 1px;
-    margin-bottom: 4px;
-    transition: color 0.4s;
-  }
-
-  .market-reason {
-    font-size: 11px;
-    color: var(--text-dim);
-    line-height: 1.5;
-    transition: all 0.3s;
-  }
-
-  .market-bar {
-    margin-top: 8px;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-
-  .market-bar-fill {
-    height: 100%;
-    border-radius: 2px;
-    transition: width 0.6s cubic-bezier(0.4,0,0.2,1), background 0.4s;
-  }
-
-  /* NARRATIVE BOX */
-  .narrative-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--accent-green);
-    border-radius: 4px;
-    padding: 16px 18px;
-    font-size: 13px;
-    line-height: 1.8;
-    color: var(--text);
-    transition: border-left-color 0.4s;
-    min-height: 80px;
-  }
-
-  .narrative-box strong { color: var(--text-bright); }
-
-  /* MACRO REGIME BADGE */
-  .regime-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    border: 1px solid currentColor;
-    border-radius: 3px;
-    padding: 5px 12px;
-    transition: all 0.4s;
-  }
-
-  .regime-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
     flex-wrap: wrap;
   }
 
-  .regime-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    color: var(--text-dim);
-    letter-spacing: 1px;
-  }
-
-  /* TABS */
-  .tab-bar {
+  .legend-item {
     display: flex;
-    gap: 0;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 18px;
+    align-items: center;
+    gap: 7px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
   }
-  .tab-btn {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    background: transparent;
-    border: none;
-    border-bottom: 2px solid transparent;
-    color: var(--text-dim);
-    padding: 10px 16px;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-bottom: -1px;
-  }
-  .tab-btn:hover { color: var(--text); }
-  .tab-btn.active { color: var(--accent-green); border-bottom-color: var(--accent-green); }
-  .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
 
-  /* ASK WHY */
-  .ask-why-wrap { display: flex; flex-direction: column; gap: 14px; }
-  .context-bar {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px; color: var(--text-dim); letter-spacing: 1px;
-    padding: 6px 10px; background: var(--surface);
-    border: 1px solid var(--border); border-radius: 3px;
-    display: flex; gap: 14px; flex-wrap: wrap;
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
   }
-  .ctx-item span { color: var(--accent-green); }
-  .quick-questions { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 4px; }
-  .qq-btn {
-    font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 1px;
-    background: var(--surface); border: 1px solid var(--border);
-    color: var(--text-dim); padding: 5px 11px; border-radius: 3px;
-    cursor: pointer; transition: all 0.2s; text-align: left;
-  }
-  .qq-btn:hover { border-color: var(--accent-green); color: var(--accent-green); }
-  .chat-history {
-    overflow-y: auto; display: flex; flex-direction: column;
-    gap: 12px; min-height: 180px; max-height: 340px; padding-right: 4px;
-  }
-  .chat-history::-webkit-scrollbar { width: 4px; }
-  .chat-history::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-  .chat-msg { display: flex; flex-direction: column; gap: 4px; animation: fadeInMsg 0.3s ease; }
-  @keyframes fadeInMsg { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
-  .msg-label {
-    font-family: 'IBM Plex Mono', monospace; font-size: 9px;
-    letter-spacing: 1px; color: var(--text-dim); text-transform: uppercase; padding: 0 4px;
-  }
-  .chat-msg.user .msg-label { align-self: flex-end; }
-  .chat-msg.user .msg-bubble {
-    background: var(--surface); border: 1px solid var(--accent-green);
-    border-radius: 3px; padding: 10px 14px; font-size: 13px;
-    color: var(--text-bright); align-self: flex-end; max-width: 88%;
-  }
-  .chat-msg.assistant .msg-bubble {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 3px; padding: 12px 14px; font-size: 13px;
-    color: var(--text); line-height: 1.75; align-self: flex-start; max-width: 100%;
-  }
-  .chat-msg.assistant .msg-bubble strong { color: var(--accent-green); }
-  .ask-input-row { display: flex; gap: 8px; align-items: stretch; }
-  .ask-input {
-    flex: 1; background: var(--surface); border: 1px solid var(--border);
-    border-radius: 3px; color: var(--text-bright);
-    font-family: 'IBM Plex Sans', sans-serif; font-size: 13px;
-    padding: 10px 14px; outline: none; transition: border-color 0.2s;
-    resize: none; min-height: 44px; max-height: 100px;
-  }
-  .ask-input:focus { border-color: var(--accent-green); }
-  .ask-input::placeholder { color: var(--text-dim); }
-  .ask-send-btn {
-    font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 1px;
-    background: var(--accent-green); border: none; color: #080c10;
-    padding: 10px 18px; border-radius: 3px; cursor: pointer; font-weight: 600;
-    transition: opacity 0.2s; white-space: nowrap; align-self: flex-end;
-  }
-  .ask-send-btn:hover { opacity: 0.85; }
-  .ask-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .thinking-dots { display: flex; gap: 4px; padding: 4px 0; }
-  .thinking-dots span {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--accent-green); animation: blink 1.2s infinite;
-  }
-  .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
-  .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes blink { 0%,80%,100%{opacity:0.2;transform:scale(0.8);} 40%{opacity:1;transform:scale(1);} }
-  .api-key-bar {
-    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
-    padding: 10px 12px; background: var(--surface);
-    border: 1px solid var(--border); border-radius: 3px;
-  }
-  .api-key-label {
-    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
-    color: var(--text-dim); letter-spacing: 1px; white-space: nowrap;
-  }
-  .api-key-input {
-    flex: 1; background: var(--bg); border: 1px solid var(--border);
-    border-radius: 3px; color: var(--text); font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px; padding: 6px 10px; outline: none; min-width: 180px;
-    transition: border-color 0.2s;
-  }
-  .api-key-input:focus { border-color: var(--accent-green); }
-  .api-key-input::placeholder { color: var(--text-dim); }
-  .api-key-save {
-    font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 1px;
-    background: transparent; border: 1px solid var(--border); color: var(--text-dim);
-    padding: 6px 12px; border-radius: 3px; cursor: pointer; transition: all 0.2s;
-    white-space: nowrap;
-  }
-  .api-key-save:hover { border-color: var(--accent-green); color: var(--accent-green); }
-  .api-status {
-    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
-    letter-spacing: 1px; padding: 3px 8px; border-radius: 2px;
-  }
-  .key-note {
-    font-family: 'IBM Plex Mono', monospace; font-size: 9px;
-    color: var(--text-dim); line-height: 1.6; padding: 0 2px;
-  }
-  .key-note a { color: var(--accent-blue); text-decoration: none; }
-  .key-note a:hover { text-decoration: underline; }
 
-  /* HEAT TABLE */
-  .heat-table {
+  .chart-canvas-wrap {
+    position: relative;
+    width: 100%;
+    height: 340px;
+  }
+
+  /* Yearly breakdown */
+  .breakdown-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.05em;
+    color: var(--text);
+    margin-bottom: 1rem;
+  }
+
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 12px;
+    font-size: 14px;
   }
 
-  .heat-table th {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 2px;
-    color: var(--text-dim);
+  thead tr {
+    background: var(--surface2);
+  }
+
+  thead th {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    text-align: left;
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+    padding: 0.9rem 1.25rem;
+    text-align: right;
     font-weight: 400;
   }
 
-  .heat-table td {
-    padding: 9px 10px;
-    border-bottom: 1px solid rgba(30,45,61,0.5);
-    vertical-align: middle;
-  }
+  thead th:first-child { text-align: left; }
 
-  .heat-cell {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 2px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    font-weight: 500;
-    transition: all 0.4s;
-  }
-
-  .arrow-up { color: var(--accent-green); }
-  .arrow-down { color: var(--accent-red); }
-  .arrow-neutral { color: var(--accent-yellow); }
-
-  footer {
-    text-align: center;
-    margin-top: 32px;
-    padding-top: 20px;
+  tbody tr {
     border-top: 1px solid var(--border);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    color: var(--text-dim);
-    letter-spacing: 1.5px;
+    transition: background 0.15s;
   }
+
+  tbody tr:hover { background: var(--surface2); }
+
+  tbody td {
+    padding: 0.85rem 1.25rem;
+    text-align: right;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  tbody td:first-child {
+    text-align: left;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  tbody td.gains-cell { color: var(--green); }
+
+  /* Footer note */
+  .footer-note {
+    margin-top: 2.5rem;
+    padding: 1.25rem 1.5rem;
+    background: var(--surface);
+    border-left: 3px solid var(--green);
+    border-radius: 0 8px 8px 0;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .footer-note strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  /* Animate on load */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .header { animation: fadeUp 0.5s ease both; }
+  .controls { animation: fadeUp 0.5s 0.1s ease both; }
+  .stats { animation: fadeUp 0.5s 0.2s ease both; }
+  .chart-wrap { animation: fadeUp 0.5s 0.3s ease both; }
+  .table-wrap { animation: fadeUp 0.5s 0.4s ease both; }
 </style>
 </head>
 <body>
 <div class="container">
 
-  <!-- HEADER -->
-  <header>
-    <div>
-      <div class="logo">MACRO<span>TRADER</span></div>
-      <div class="tagline">// Economic Forces Simulator for Active Traders</div>
-    </div>
-    <div class="status-bar">
-      <span class="status-dot"></span>LIVE MODEL ACTIVE<br>
-      <span style="margin-top:4px;display:block">Adjust sliders to simulate macro scenarios</span>
-    </div>
-  </header>
-
-  <!-- EXPLAINER CARDS -->
-  <div class="explainer-grid">
-
-    <div class="explainer-card gdp">
-      <div class="card-icon">📈</div>
-      <div class="card-title gdp">GDP — Economic Growth</div>
-      <div class="card-subtitle">The "Big Scoreboard"</div>
-      <div class="card-body">
-        GDP measures <strong>how much money a country made</strong> from all its activity — selling, building, working, buying. Think of it like a country's yearly salary.<br><br>
-        When GDP is <strong>growing</strong> → the economy is healthy, companies make profits, people spend. When GDP <strong>shrinks</strong> → recession, jobs disappear, fear spreads.
-      </div>
-    </div>
-
-    <div class="explainer-card labour">
-      <div class="card-icon">👷</div>
-      <div class="card-title labour">Labour Market — Jobs Data</div>
-      <div class="card-subtitle">The "Employment Health Check"</div>
-      <div class="card-body">
-        This tracks <strong>how many people have jobs</strong> and how many don't (unemployment rate). It also tracks wages — are workers earning more?<br><br>
-        <strong>Low unemployment + rising wages</strong> = people have money to spend = good. <strong>High unemployment</strong> = people stop spending = economy slows. It's the heartbeat of consumer demand.
-      </div>
-    </div>
-
-    <div class="explainer-card inflation">
-      <div class="card-icon">🔥</div>
-      <div class="card-title inflation">Inflation — Price Growth</div>
-      <div class="card-subtitle">The "Cost of Everything"</div>
-      <div class="card-body">
-        Inflation is how fast <strong>prices are rising</strong>. A little bit (around 2%) is healthy — it shows the economy is moving. Too much inflation = your money buys less every day.<br><br>
-        <strong>High inflation</strong> is dangerous — it destroys purchasing power. <strong>Deflation</strong> (falling prices) is also dangerous — people stop buying because they wait for cheaper prices.
-      </div>
-    </div>
-
-    <div class="explainer-card monetary">
-      <div class="card-icon">🏦</div>
-      <div class="card-title monetary">Monetary Policy — Central Banks</div>
-      <div class="card-subtitle">The "Money Tap" (Fed, ECB, BOE…)</div>
-      <div class="card-body">
-        Central banks (like the US Federal Reserve) control the <strong>price of money itself</strong> — interest rates. They also print or destroy money.<br><br>
-        <strong>Raise rates</strong> = borrowing costs more → spending slows → inflation cools. <strong>Cut rates</strong> = borrowing is cheap → spending increases → economy heats up. It's their main lever to balance the economy.
-      </div>
-    </div>
-
-    <div class="explainer-card fiscal">
-      <div class="card-icon">🏛️</div>
-      <div class="card-title fiscal">Fiscal Policy — Government</div>
-      <div class="card-subtitle">The "Spending & Tax" Lever</div>
-      <div class="card-body">
-        Governments can <strong>spend more</strong> (build roads, pay benefits, fund programs) or <strong>raise/cut taxes</strong>. This directly puts money into or takes it out of the economy.<br><br>
-        <strong>Stimulus spending</strong> = more money in the economy = growth boost. <strong>Austerity</strong> = cutting spending = slows growth but reduces debt. Unlike central banks, this is slower — needs political approval.
-      </div>
-    </div>
-
-    <div class="explainer-card" style="border-top-color: #334;">
-      <div class="card-icon">⚡</div>
-      <div class="card-title" style="color:#888">How They're All Connected</div>
-      <div class="card-subtitle">The Triangle of Forces</div>
-      <div class="card-body">
-        <strong>GDP ↑ + Jobs ↑</strong> → people earn and spend more → <strong>Inflation ↑</strong><br>
-        → Central bank <strong>raises rates</strong> to cool it down → borrowing costs more → spending slows → <strong>GDP ↓</strong><br><br>
-        It's always a <strong>balancing act</strong>. Too hot = inflation crisis. Too cold = recession. The central bank targets the "Goldilocks zone" — strong growth with ~2% inflation.
-      </div>
-    </div>
-
+  <div class="header">
+    <div class="header-eyebrow">Compound Interest Calculator</div>
+    <h1>YOUR MONEY<br><span>WORKING</span> FOR YOU</h1>
+    <p class="header-sub">See exactly how monthly investing compounds into serious wealth over time — adjust the sliders to match your situation.</p>
   </div>
 
-  <!-- SIMULATOR -->
-  <div class="sim-wrapper">
-    <div class="sim-header">
-      <div class="sim-title">⚙ LIVE MARKET SIMULATOR</div>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-        <div class="scenario-btns">
-          <button class="scenario-btn" onclick="loadScenario('boom')">🚀 Boom</button>
-          <button class="scenario-btn" onclick="loadScenario('recession')">🧊 Recession</button>
-          <button class="scenario-btn" onclick="loadScenario('stagflation')">💀 Stagflation</button>
-          <button class="scenario-btn" onclick="loadScenario('goldilocks')">✨ Goldilocks</button>
-          <button class="scenario-btn" onclick="loadScenario('crisis')">🔴 2008 Crisis</button>
-        </div>
-        <button class="reset-btn" onclick="resetAll()">↺ RESET</button>
-      </div>
+  <div class="controls">
+    <div class="control-card">
+      <div class="control-label">Monthly Investment</div>
+      <div class="control-value" id="monthly-display">$100 <span>/mo</span></div>
+      <input type="range" min="50" max="5000" step="50" value="100" id="monthly-slider">
+      <div class="range-bounds"><span>$50</span><span>$5,000</span></div>
     </div>
-
-    <div class="sim-body">
-
-      <!-- SLIDERS -->
-      <div class="sliders-panel">
-
-        <div class="slider-group">
-          <div class="slider-label-row">
-            <span class="slider-name gdp">GDP Growth</span>
-            <span class="slider-value" id="gdp-val" style="color:var(--gdp-color)">2.5%</span>
-          </div>
-          <div class="slider-desc">Annual economic growth rate. Global average ~2.5–3.5%.</div>
-          <div class="slider-track">
-            <div class="slider-fill" id="gdp-fill" style="background:var(--gdp-color); width:50%"></div>
-          </div>
-          <input type="range" class="gdp-slider" id="gdp" min="-5" max="10" step="0.1" value="2.5" oninput="update()">
-          <div class="slider-ticks"><span>-5% Crash</span><span>0%</span><span>5%</span><span>10% Boom</span></div>
-        </div>
-
-        <div class="slider-group">
-          <div class="slider-label-row">
-            <span class="slider-name labour">Unemployment</span>
-            <span class="slider-value" id="unemp-val" style="color:var(--labour-color)">4.5%</span>
-          </div>
-          <div class="slider-desc">% of workforce without jobs. "Full employment" ≈ 4–5%.</div>
-          <div class="slider-track">
-            <div class="slider-fill" id="unemp-fill" style="background:var(--labour-color); width:30%"></div>
-          </div>
-          <input type="range" class="labour-slider" id="unemp" min="1" max="20" step="0.1" value="4.5" oninput="update()">
-          <div class="slider-ticks"><span>1% Full</span><span>5%</span><span>12%</span><span>20% Crisis</span></div>
-        </div>
-
-        <div class="slider-group">
-          <div class="slider-label-row">
-            <span class="slider-name inflation">Inflation</span>
-            <span class="slider-value" id="inf-val" style="color:var(--inflation-color)">3.0%</span>
-          </div>
-          <div class="slider-desc">Annual price growth rate. Central bank target ≈ 2%.</div>
-          <div class="slider-track">
-            <div class="slider-fill" id="inf-fill" style="background:var(--inflation-color); width:33%"></div>
-          </div>
-          <input type="range" class="inflation-slider" id="inf" min="-2" max="20" step="0.1" value="3.0" oninput="update()">
-          <div class="slider-ticks"><span>-2% Deflation</span><span>2% Target</span><span>10%</span><span>20% Hyper</span></div>
-        </div>
-
-        <hr class="divider">
-
-        <div>
-          <div class="policy-label">Auto-inferred policies</div>
-          <div class="policy-indicator">
-            <div class="policy-name">🏦 Central Bank Stance</div>
-            <div class="policy-value" id="monetary-stance" style="color:#aa55ff">NEUTRAL</div>
-          </div>
-          <div class="policy-indicator">
-            <div class="policy-name">📊 Expected Rate Move</div>
-            <div class="policy-value" id="rate-move" style="color:#aa55ff">HOLD</div>
-          </div>
-          <div class="policy-indicator">
-            <div class="policy-name">🏛️ Fiscal Response</div>
-            <div class="policy-value" id="fiscal-stance" style="color:var(--accent-yellow)">NEUTRAL</div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- MARKETS PANEL -->
-      <div class="markets-panel">
-
-        <div>
-          <div class="regime-row">
-            <span class="regime-label">MACRO REGIME:</span>
-            <span class="regime-badge" id="regime-badge" style="color:var(--accent-green)">🟢 RISK ON</span>
-          </div>
-        </div>
-
-        <!-- TAB BAR -->
-        <div class="tab-bar">
-          <button class="tab-btn active" onclick="switchTab('signals',this)">Market Signals</button>
-          <button class="tab-btn" onclick="switchTab('table',this)">Signal Table</button>
-          <button class="tab-btn" onclick="switchTab('askwhy',this)">⚡ Ask Why</button>
-        </div>
-
-        <!-- TAB: SIGNALS -->
-        <div class="tab-panel active" id="tab-signals">
-          <div class="narrative-box" id="narrative">
-            Adjust the sliders to simulate a macro scenario. The model will calculate the likely market impact across all asset classes.
-          </div>
-          <div style="margin-top:16px;">
-            <div class="section-label">// Market Impact by Asset Class</div>
-            <div class="markets-grid" id="markets-grid"></div>
-          </div>
-        </div>
-
-        <!-- TAB: TABLE -->
-        <div class="tab-panel" id="tab-table">
-          <div class="section-label">// Signal Summary Table</div>
-          <table class="heat-table" id="heat-table">
-            <thead>
-              <tr>
-                <th>Market</th>
-                <th>Signal</th>
-                <th>Direction</th>
-                <th>Key Driver</th>
-                <th>Strength</th>
-              </tr>
-            </thead>
-            <tbody id="table-body"></tbody>
-          </table>
-        </div>
-
-        <!-- TAB: ASK WHY -->
-        <div class="tab-panel" id="tab-askwhy">
-          <div class="ask-why-wrap">
-
-            <!-- API KEY BAR -->
-            <div class="api-key-bar">
-              <span class="api-key-label">🔑 ANTHROPIC API KEY</span>
-              <input type="password" class="api-key-input" id="api-key-input" placeholder="sk-ant-api03-..." />
-              <button class="api-key-save" onclick="saveKey()">SAVE</button>
-              <span class="api-status" id="api-status" style="color:var(--text-dim)">● NOT SET</span>
-            </div>
-            <div class="key-note">
-              Get a free key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys → Create Key. Your key is stored only in your browser's memory and never sent anywhere except Anthropic's servers.
-            </div>
-
-            <!-- LIVE CONTEXT -->
-            <div class="context-bar">
-              <span class="ctx-item">GDP <span id="ctx-gdp">2.5%</span></span>
-              <span class="ctx-item">Unemployment <span id="ctx-unemp">4.5%</span></span>
-              <span class="ctx-item">Inflation <span id="ctx-inf">3.0%</span></span>
-              <span class="ctx-item">Regime <span id="ctx-regime">—</span></span>
-            </div>
-
-            <!-- QUICK QUESTIONS -->
-            <div>
-              <div class="section-label" style="margin-bottom:8px;">// Quick questions</div>
-              <div class="quick-questions">
-                <button class="qq-btn" onclick="askQuick('Why is crypto reacting this way in the current macro environment?')">Why is crypto reacting like this?</button>
-                <button class="qq-btn" onclick="askQuick('Why does the USD react this way to the current macro numbers?')">Why USD reacts like this?</button>
-                <button class="qq-btn" onclick="askQuick('Why are stocks reacting this way given the current GDP, unemployment and inflation data?')">Why stocks react like this?</button>
-                <button class="qq-btn" onclick="askQuick('What is the central bank likely to do given these numbers, and why?')">What will the central bank do?</button>
-                <button class="qq-btn" onclick="askQuick('Why is gold reacting the way it is in this scenario?')">Why gold reacts like this?</button>
-                <button class="qq-btn" onclick="askQuick('Explain this macro regime to me like I am a complete beginner trader — what does it mean and what should I watch?')">Explain this regime simply</button>
-                <button class="qq-btn" onclick="askQuick('What real historical event does this macro scenario most resemble, and what happened to markets back then?')">Which historical event is this like?</button>
-                <button class="qq-btn" onclick="askQuick('What are the key risks a trader should watch out for in this environment?')">What risks should I watch?</button>
-              </div>
-            </div>
-
-            <!-- CHAT -->
-            <div class="chat-history" id="chat-history">
-              <div class="chat-msg assistant">
-                <div class="msg-label">MacroTrader AI</div>
-                <div class="msg-bubble">
-                  Enter your Anthropic API key above, then ask me <strong>anything</strong> about why the markets are reacting the way they are. I have full context of your current scenario — GDP, unemployment, inflation, regime, and every market signal. Ask away.
-                </div>
-              </div>
-            </div>
-
-            <!-- INPUT -->
-            <div class="ask-input-row">
-              <textarea class="ask-input" id="ask-input"
-                placeholder="e.g. Why is gold bullish here but bonds are bearish?"
-                rows="1"
-                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAsk();}"></textarea>
-              <button class="ask-send-btn" id="ask-send-btn" onclick="sendAsk()">ASK →</button>
-            </div>
-
-          </div>
-        </div>
-
-      </div>
+    <div class="control-card">
+      <div class="control-label">Annual Return Rate</div>
+      <div class="control-value" id="rate-display">10 <span>% /yr</span></div>
+      <input type="range" min="1" max="25" step="0.5" value="10" id="rate-slider">
+      <div class="range-bounds"><span>1%</span><span>25%</span></div>
+    </div>
+    <div class="control-card">
+      <div class="control-label">Investment Period</div>
+      <div class="control-value" id="years-display">10 <span>yrs</span></div>
+      <input type="range" min="1" max="40" step="1" value="10" id="years-slider">
     </div>
   </div>
 
-  <footer>
-    MACROTRADER — EDUCATIONAL SIMULATOR // NOT FINANCIAL ADVICE // ALL MODELS ARE SIMPLIFIED REPRESENTATIONS
-  </footer>
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">Total Deposited</div>
+      <div class="stat-value" id="stat-deposited">$12,000</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Final Balance</div>
+      <div class="stat-value" id="stat-balance">$20,484</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Compounding Gains</div>
+      <div class="stat-value positive" id="stat-gains">$8,484</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Total Return</div>
+      <div class="stat-value accent" id="stat-return">+70.7%</div>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-header">
+      <div class="chart-title" id="chart-title">10-Year Growth Curve</div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#00E5A0;"></div>Portfolio value</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#3D4148; border: 1px dashed #6B7280;"></div>Total deposited</div>
+      </div>
+    </div>
+    <div class="chart-canvas-wrap">
+      <canvas id="growthChart" role="img" aria-label="Area chart showing portfolio value vs total deposited over 10 years"></canvas>
+    </div>
+  </div>
+
+  <div class="breakdown-title">Year-by-Year Breakdown</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Year</th>
+          <th>Deposited (year)</th>
+          <th>Total deposited</th>
+          <th>Interest earned (year)</th>
+          <th>Portfolio value</th>
+          <th>Compounding gains</th>
+        </tr>
+      </thead>
+      <tbody id="breakdown-body"></tbody>
+    </table>
+  </div>
+
+  <div class="footer-note">
+    <strong>How this works:</strong> Each month, your contribution earns interest from day one. The following month, that interest also earns interest — this is compounding. The longer you stay invested, the faster the gap between what you deposit and what you have grows. <strong>The green area on the chart is money you never worked for.</strong> Past performance of any index does not guarantee future results. This calculator is for educational purposes only.
+  </div>
 
 </div>
 
 <script>
-const markets = [
-  { id: 'forex', name: 'Forex (USD)', icon: '💱', desc: '' },
-  { id: 'stocks', name: 'Stock Market', icon: '📊', desc: '' },
-  { id: 'bonds', name: 'Bonds (Gov.)', icon: '📃', desc: '' },
-  { id: 'gold', name: 'Gold', icon: '🥇', desc: '' },
-  { id: 'oil', name: 'Oil / WTI', icon: '🛢️', desc: '' },
-  { id: 'crypto', name: 'Crypto (BTC)', icon: '₿', desc: '' },
-  { id: 'futures', name: 'Equity Futures', icon: '⚡', desc: '' },
-  { id: 'realestate', name: 'Real Estate', icon: '🏠', desc: '' },
-];
-
-function getValues() {
-  return {
-    gdp: parseFloat(document.getElementById('gdp').value),
-    unemp: parseFloat(document.getElementById('unemp').value),
-    inf: parseFloat(document.getElementById('inf').value),
-  };
-}
-
-function computeSignals(gdp, unemp, inf) {
-  // Normalize scores -10 to +10
-  const gdpScore = Math.max(-10, Math.min(10, gdp * 1.2)); // +2.5 GDP = +3 score
-  const empScore = Math.max(-10, Math.min(10, (8 - unemp) * 1.2)); // lower unemployment = higher score
-  const infScore = inf; // raw inflation value
-
-  // Inflation danger: above 4% = hawkish pressure, below 1% = dovish
-  const infDanger = inf > 8 ? 3 : inf > 5 ? 2 : inf > 3 ? 1 : inf < 0 ? -2 : 0;
-  const infOk = (inf >= 1.5 && inf <= 3.5);
-
-  // Growth composite
-  const growthScore = (gdpScore + empScore) / 2;
-
-  // Central bank stance
-  let cbStance, rateMove, fiscalStance;
-  if (inf > 6 || (inf > 4 && gdp > 3)) {
-    cbStance = 'HAWKISH 🔴'; rateMove = '▲ HIKE RATES';
-  } else if (inf < 1 || gdp < 0 || unemp > 10) {
-    cbStance = 'DOVISH 🟢'; rateMove = '▼ CUT RATES';
-  } else {
-    cbStance = 'NEUTRAL ⚪'; rateMove = '— HOLD';
+  function fmt(n) {
+    return '$' + Math.round(n).toLocaleString('en-US');
   }
 
-  if (gdp < -1 || unemp > 9) fiscalStance = 'STIMULUS 💵';
-  else if (inf > 7 && gdp > 2) fiscalStance = 'AUSTERITY ✂️';
-  else fiscalStance = 'MODERATE 🏛️';
+  function calcData(monthly, annualRate, years) {
+    const monthlyRate = annualRate / 100 / 12;
+    const totalMonths = years * 12;
+    const labels = [];
+    const deposited = [];
+    const portfolio = [];
+    const yearlyInterest = [];
+    const yearlyDeposit = [];
+    let balance = 0;
+    let totalDeposited = 0;
+    let prevBalance = 0;
 
-  // Market signals
-  const hawkish = inf > 4 || (inf > 3 && gdp > 3);
-  const dovish = inf < 1.5 || gdp < 0;
-  const riskOn = gdp > 2 && unemp < 6 && inf < 5;
-  const riskOff = gdp < 0 || unemp > 10 || inf > 8;
-  const stagflation = inf > 6 && gdp < 1;
-  const boom = gdp > 5 && unemp < 4;
-  const recession = gdp < -1 && unemp > 7;
-
-  // USD: strong when hawkish (high rates), weak when dovish
-  const usdDir = hawkish ? 'BULLISH' : dovish ? 'BEARISH' : inf > 3 ? 'BULLISH' : 'NEUTRAL';
-  const usdScore = hawkish ? 75 : dovish ? 30 : 55;
-  const usdReason = hawkish
-    ? 'High inflation forces rate hikes → USD attracts capital'
-    : dovish
-    ? 'Rate cuts expected → capital leaves USD → currency weakens'
-    : 'Moderate conditions, USD relatively stable';
-
-  // Stocks: love growth + low rates, hate high rates + recession
-  const stockDir = recession ? 'BEARISH' : stagflation ? 'BEARISH' : riskOn && !hawkish ? 'BULLISH' : hawkish && gdp < 2 ? 'BEARISH' : boom ? 'BULLISH' : 'NEUTRAL';
-  const stockScore = recession ? 20 : stagflation ? 25 : riskOn && !hawkish ? 80 : hawkish && gdp < 2 ? 35 : boom ? 90 : 55;
-  const stockReason = recession
-    ? 'GDP contracting + jobs lost = earnings falling = stocks drop'
-    : stagflation
-    ? 'High inflation + slow growth = worst combo for equities'
-    : riskOn && !hawkish
-    ? 'Strong growth + contained inflation = earnings growth = stocks rise'
-    : hawkish && gdp < 2
-    ? 'Rate hikes slow economy + cut into future earnings = stocks fall'
-    : 'Mixed signals, sector-dependent performance';
-
-  // Bonds: love dovish/recession, hate inflation/hikes
-  const bondDir = inf > 5 || hawkish ? 'BEARISH' : recession || dovish ? 'BULLISH' : 'NEUTRAL';
-  const bondScore = inf > 5 ? 20 : hawkish ? 30 : recession ? 80 : dovish ? 75 : 50;
-  const bondReason = inf > 5
-    ? 'High inflation erodes bond returns + rate hikes = bond prices fall'
-    : recession
-    ? 'Flight to safety → investors buy bonds → prices rise, yields fall'
-    : 'Moderate environment, bonds offer stable returns';
-
-  // Gold: safe haven + inflation hedge
-  const goldDir = inf > 5 || riskOff ? 'BULLISH' : dovish && gdp < 0 ? 'BULLISH' : riskOn && infOk ? 'BEARISH' : 'NEUTRAL';
-  const goldScore = inf > 7 ? 90 : inf > 5 || riskOff ? 75 : riskOn && infOk ? 35 : 50;
-  const goldReason = inf > 5
-    ? 'Gold is the classic inflation hedge — real assets win when money loses value'
-    : riskOff
-    ? 'Market fear = capital runs to gold as safe haven'
-    : riskOn && infOk
-    ? 'Low fear + low inflation = no need for gold = capital goes to riskier assets'
-    : 'Moderate demand, consolidating';
-
-  // Oil: loves growth/demand, hurt by recession
-  const oilDir = recession ? 'BEARISH' : gdp > 3 && unemp < 6 ? 'BULLISH' : stagflation ? 'NEUTRAL' : 'NEUTRAL';
-  const oilScore = recession ? 25 : gdp > 3 && unemp < 6 ? 75 : stagflation ? 50 : 50;
-  const oilReason = recession
-    ? 'Recession = less industrial activity + travel = oil demand drops'
-    : gdp > 3 && unemp < 6
-    ? 'Strong growth = more factories, transport, consumption = oil demand rises'
-    : 'Supply/demand balance, watching global demand closely';
-
-  // Crypto: risk-on asset, loves cheap money
-  const cryptoDir = dovish && !recession ? 'BULLISH' : hawkish ? 'BEARISH' : recession ? 'BEARISH' : riskOn ? 'BULLISH' : 'NEUTRAL';
-  const cryptoScore = dovish && !recession ? 80 : hawkish ? 30 : recession ? 25 : riskOn ? 70 : 50;
-  const cryptoReason = dovish && !recession
-    ? 'Cheap money + low rates → investors take more risk → crypto rises'
-    : hawkish
-    ? 'Rate hikes = expensive money = investors move to safer assets = crypto falls'
-    : recession
-    ? 'Risk-off environment: crypto treated as speculative, capital exits'
-    : 'Growth optimism supporting risk appetite in digital assets';
-
-  // Futures: mirrors stock market but amplified
-  const futDir = stockDir;
-  const futScore = Math.min(100, Math.max(5, stockScore + (boom ? 5 : recession ? -5 : 0)));
-  const futReason = recession
-    ? 'Index futures front-run the stock drop — ES/NQ lead declines'
-    : riskOn && !hawkish
-    ? 'Futures price in earnings growth optimism ahead of equity open'
-    : 'Futures track macro expectations — currently following equity signals';
-
-  // Real estate: loves low rates
-  const reDir = dovish && !recession ? 'BULLISH' : hawkish ? 'BEARISH' : recession ? 'BEARISH' : 'NEUTRAL';
-  const reScore = dovish && !recession ? 75 : hawkish ? 30 : recession ? 25 : 55;
-  const reReason = dovish && !recession
-    ? 'Low mortgage rates = cheaper to buy = demand rises = prices go up'
-    : hawkish
-    ? 'High interest rates = expensive mortgages = buyers disappear = prices fall'
-    : 'Credit conditions determine access, market watching rate trajectory';
-
-  // Macro regime
-  let regime, regimeColor;
-  if (recession) { regime = '🧊 RISK OFF — RECESSION'; regimeColor = '#ff3355'; }
-  else if (stagflation) { regime = '💀 STAGFLATION'; regimeColor = '#ff7700'; }
-  else if (boom) { regime = '🚀 BOOM — OVERHEATING'; regimeColor = '#ffd700'; }
-  else if (riskOn && infOk) { regime = '✨ GOLDILOCKS'; regimeColor = '#00ff88'; }
-  else if (hawkish) { regime = '🔴 HAWKISH TIGHTENING'; regimeColor = '#ff5577'; }
-  else if (riskOn) { regime = '🟢 RISK ON — GROWTH'; regimeColor = '#00ff88'; }
-  else { regime = '⚪ TRANSITION'; regimeColor = '#aaaaaa'; }
-
-  // Narrative
-  let narrative = '';
-  if (stagflation) {
-    narrative = `<strong>Stagflation Alert.</strong> This is the nightmare scenario — inflation at <strong>${inf.toFixed(1)}%</strong> is destroying purchasing power while GDP growth of <strong>${gdp.toFixed(1)}%</strong> and unemployment at <strong>${unemp.toFixed(1)}%</strong> show the economy is struggling. The central bank is trapped: raise rates to fight inflation and you crush the already-weak economy; cut to save growth and inflation spirals higher. Think <strong>1970s USA</strong>. Commodities, real assets, and short-equity are the classic plays.`;
-  } else if (recession) {
-    narrative = `<strong>Recessionary Environment.</strong> GDP contracting at <strong>${gdp.toFixed(1)}%</strong> and unemployment at <strong>${unemp.toFixed(1)}%</strong> — the economy is in contraction. Central banks will likely <strong>cut rates aggressively</strong> to stimulate demand. Governments activate fiscal stimulus. Markets go risk-off: bonds, gold, and the USD (as safe haven) typically win. Equities and crypto get hammered. Watch for the <strong>eventual recovery trade</strong> — markets bottom before the economy does.`;
-  } else if (boom) {
-    narrative = `<strong>Economic Boom — But Watch the Temperature.</strong> GDP at <strong>${gdp.toFixed(1)}%</strong> and unemployment at <strong>${unemp.toFixed(1)}%</strong> — the economy is firing on all cylinders. The risk? Inflation at <strong>${inf.toFixed(1)}%</strong> ${inf > 4 ? 'is already forcing the central bank to hike rates, which will eventually cool this off' : 'is still manageable — the sweet spot'}. Equities and commodities lead. The <strong>eventual rate hike cycle</strong> is the threat to watch.`;
-  } else if (riskOn && infOk) {
-    narrative = `<strong>Goldilocks Zone.</strong> GDP <strong>${gdp.toFixed(1)}%</strong>, unemployment <strong>${unemp.toFixed(1)}%</strong>, inflation <strong>${inf.toFixed(1)}%</strong> — this is the ideal macro environment every trader loves. Growth is solid, inflation is contained near the 2% target, and the central bank has no reason to act aggressively. Risk assets — stocks, crypto, high-yield — all benefit. This is when trending strategies work best.`;
-  } else if (hawkish) {
-    narrative = `<strong>Tightening Cycle.</strong> Inflation at <strong>${inf.toFixed(1)}%</strong> is forcing the central bank's hand — rate hikes are coming or already underway. This is the classic <strong>"sell everything" phase</strong> for markets — bonds lose value, stocks reprice lower, crypto corrects, mortgage rates rise. The USD strengthens. Commodities are mixed — gold may rally on uncertainty while oil depends on growth. <strong>Duration risk is high</strong> — keep positions shorter.`;
-  } else {
-    narrative = `<strong>Transitional Environment.</strong> GDP <strong>${gdp.toFixed(1)}%</strong>, unemployment <strong>${unemp.toFixed(1)}%</strong>, inflation <strong>${inf.toFixed(1)}%</strong>. No extreme signal dominates — the economy is in a wait-and-see phase. Monetary policy is on hold. Markets are range-bound looking for a catalyst. Upcoming data releases (NFP, CPI, GDP prints) will be the key inflection points. <strong>Patience and selective positioning</strong> are key.`;
-  }
-
-  return {
-    cbStance, rateMove, fiscalStance, regime, regimeColor, narrative,
-    signals: {
-      forex: { dir: usdDir, score: usdScore, reason: usdReason },
-      stocks: { dir: stockDir, score: stockScore, reason: stockReason },
-      bonds: { dir: bondDir, score: bondScore, reason: bondReason },
-      gold: { dir: goldDir, score: goldScore, reason: goldReason },
-      oil: { dir: oilDir, score: oilScore, reason: oilReason },
-      crypto: { dir: cryptoDir, score: cryptoScore, reason: cryptoReason },
-      futures: { dir: futDir, score: futScore, reason: futReason },
-      realestate: { dir: reDir, score: reScore, reason: reReason },
-    }
-  };
-}
-
-function dirColor(dir) {
-  if (dir === 'BULLISH') return 'var(--accent-green)';
-  if (dir === 'BEARISH') return 'var(--accent-red)';
-  return 'var(--accent-yellow)';
-}
-
-function dirArrow(dir) {
-  if (dir === 'BULLISH') return '▲ BULLISH';
-  if (dir === 'BEARISH') return '▼ BEARISH';
-  return '● NEUTRAL';
-}
-
-function dirArrowSymbol(dir) {
-  if (dir === 'BULLISH') return '▲';
-  if (dir === 'BEARISH') return '▼';
-  return '●';
-}
-
-function renderMarkets(signals) {
-  const grid = document.getElementById('markets-grid');
-  grid.innerHTML = '';
-  markets.forEach(m => {
-    const s = signals[m.id];
-    const color = dirColor(s.dir);
-    const barPct = s.score;
-    const card = document.createElement('div');
-    card.className = 'market-card';
-    card.style.borderColor = color + '44';
-    card.innerHTML = `
-      <div class="market-name">${m.name}</div>
-      <span class="market-icon">${m.icon}</span>
-      <div class="market-signal" style="color:${color}">${dirArrow(s.dir)}</div>
-      <div class="market-reason">${s.reason}</div>
-      <div class="market-bar">
-        <div class="market-bar-fill" style="width:${barPct}%;background:${color}"></div>
-      </div>
-    `;
-    card.style.setProperty('--after-bg', color);
-    grid.appendChild(card);
-  });
-}
-
-function renderTable(signals) {
-  const body = document.getElementById('table-body');
-  body.innerHTML = '';
-  const strengths = { BULLISH: 'HIGH', BEARISH: 'HIGH', NEUTRAL: 'LOW' };
-  const drivers = {
-    forex: 'Rate Differential / Safe Haven',
-    stocks: 'Earnings Growth / Risk Appetite',
-    bonds: 'Rate Expectations / Flight to Safety',
-    gold: 'Inflation Hedge / Safe Haven',
-    oil: 'Industrial Demand / GDP Proxy',
-    crypto: 'Risk Appetite / Liquidity',
-    futures: 'Forward Earnings / Macro Expectations',
-    realestate: 'Mortgage Rates / Consumer Wealth',
-  };
-  markets.forEach(m => {
-    const s = signals[m.id];
-    const color = dirColor(s.dir);
-    const sym = dirArrowSymbol(s.dir);
-    const str = s.score > 65 || s.score < 35 ? 'STRONG' : 'MODERATE';
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td style="font-weight:500;color:var(--text-bright)">${m.icon} ${m.name}</td>
-      <td><span class="heat-cell" style="background:${color}22;color:${color}">${sym} ${s.dir}</span></td>
-      <td style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:${color}">${s.score}/100</td>
-      <td style="color:var(--text-dim);font-size:11px">${drivers[m.id]}</td>
-      <td><span class="heat-cell" style="background:${color}11;color:${color};font-size:10px">${str}</span></td>
-    `;
-    body.appendChild(row);
-  });
-}
-
-function update() {
-  const { gdp, unemp, inf } = getValues();
-
-  // Update displayed values
-  document.getElementById('gdp-val').textContent = gdp.toFixed(1) + '%';
-  document.getElementById('unemp-val').textContent = unemp.toFixed(1) + '%';
-  document.getElementById('inf-val').textContent = inf.toFixed(1) + '%';
-
-  // Update fill bars
-  const gdpPct = ((gdp - (-5)) / 15) * 100;
-  const unempPct = ((unemp - 1) / 19) * 100;
-  const infPct = ((inf - (-2)) / 22) * 100;
-  document.getElementById('gdp-fill').style.width = gdpPct + '%';
-  document.getElementById('unemp-fill').style.width = unempPct + '%';
-  document.getElementById('inf-fill').style.width = infPct + '%';
-
-  const result = computeSignals(gdp, unemp, inf);
-
-  // Update policy indicators
-  const mStance = document.getElementById('monetary-stance');
-  mStance.textContent = result.cbStance;
-  mStance.style.color = result.cbStance.includes('HAWKISH') ? 'var(--accent-red)' : result.cbStance.includes('DOVISH') ? 'var(--accent-green)' : '#aa55ff';
-
-  const rMove = document.getElementById('rate-move');
-  rMove.textContent = result.rateMove;
-  rMove.style.color = result.rateMove.includes('HIKE') ? 'var(--accent-red)' : result.rateMove.includes('CUT') ? 'var(--accent-green)' : '#aa55ff';
-
-  const fStance = document.getElementById('fiscal-stance');
-  fStance.textContent = result.fiscalStance;
-  fStance.style.color = result.fiscalStance.includes('STIMULUS') ? 'var(--accent-green)' : result.fiscalStance.includes('AUSTERITY') ? 'var(--accent-red)' : 'var(--accent-yellow)';
-
-  // Regime
-  const badge = document.getElementById('regime-badge');
-  badge.textContent = result.regime;
-  badge.style.color = result.regimeColor;
-  badge.style.borderColor = result.regimeColor;
-
-  // Narrative
-  document.getElementById('narrative').innerHTML = result.narrative;
-  document.getElementById('narrative').style.borderLeftColor = result.regimeColor;
-
-  renderMarkets(result.signals);
-  renderTable(result.signals);
-}
-
-function setSliders(gdp, unemp, inf) {
-  document.getElementById('gdp').value = gdp;
-  document.getElementById('unemp').value = unemp;
-  document.getElementById('inf').value = inf;
-  document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
-}
-
-function loadScenario(name) {
-  document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
-  const scenarios = {
-    boom: [7, 3, 5.5],
-    recession: [-2.5, 11, 1.0],
-    stagflation: [0.5, 7.5, 9.5],
-    goldilocks: [3.0, 4.2, 2.1],
-    crisis: [-4, 14, 0.5],
-  };
-  const [g, u, i] = scenarios[name];
-  document.getElementById('gdp').value = g;
-  document.getElementById('unemp').value = u;
-  document.getElementById('inf').value = i;
-  update();
-}
-
-function resetAll() {
-  document.getElementById('gdp').value = 2.5;
-  document.getElementById('unemp').value = 4.5;
-  document.getElementById('inf').value = 3.0;
-  document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
-  update();
-}
-
-// ── TAB SWITCHING ──────────────────────────────────────
-function switchTab(name, btn) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  document.getElementById('tab-' + name).classList.add('active');
-}
-
-// ── CONTEXT BAR (stays in sync with sliders) ───────────
-function updateContextBar() {
-  const { gdp, unemp, inf } = getValues();
-  const ctxGdp = document.getElementById('ctx-gdp');
-  const ctxUnemp = document.getElementById('ctx-unemp');
-  const ctxInf = document.getElementById('ctx-inf');
-  const ctxRegime = document.getElementById('ctx-regime');
-  if (ctxGdp) ctxGdp.textContent = gdp.toFixed(1) + '%';
-  if (ctxUnemp) ctxUnemp.textContent = unemp.toFixed(1) + '%';
-  if (ctxInf) ctxInf.textContent = inf.toFixed(1) + '%';
-  const badge = document.getElementById('regime-badge');
-  if (badge && ctxRegime) ctxRegime.textContent = badge.textContent.replace(/[\u{1F300}-\u{1FFFF}]/gu, '').trim();
-}
-
-// Wrap the existing update() to also refresh context bar
-const _coreUpdate = update;
-window.update = function() { _coreUpdate(); updateContextBar(); };
-
-// ── API KEY MANAGEMENT ─────────────────────────────────
-let _apiKey = '';
-
-function saveKey() {
-  const val = document.getElementById('api-key-input').value.trim();
-  if (!val) { setApiStatus('empty'); return; }
-  if (!val.startsWith('sk-ant-')) { setApiStatus('invalid'); return; }
-  _apiKey = val;
-  document.getElementById('api-key-input').value = ''; // clear field for safety
-  setApiStatus('set');
-}
-
-function setApiStatus(state) {
-  const el = document.getElementById('api-status');
-  if (!el) return;
-  if (state === 'set')     { el.textContent = '● READY'; el.style.color = 'var(--accent-green)'; }
-  else if (state === 'invalid') { el.textContent = '● INVALID KEY FORMAT'; el.style.color = 'var(--accent-red)'; }
-  else if (state === 'empty')   { el.textContent = '● ENTER A KEY FIRST'; el.style.color = 'var(--accent-yellow)'; }
-  else if (state === 'error')   { el.textContent = '● API ERROR'; el.style.color = 'var(--accent-red)'; }
-}
-
-// ── ASK WHY AI ─────────────────────────────────────────
-let _chatMessages = [];
-
-function buildSystemPrompt() {
-  const { gdp, unemp, inf } = getValues();
-  const result = computeSignals(gdp, unemp, inf);
-  const sigs = Object.entries(result.signals)
-    .map(([k, v]) => `  • ${k}: ${v.dir} (${v.score}/100) — ${v.reason}`)
-    .join('\n');
-  return `You are MacroTrader AI — a plain-English macroeconomics and financial markets educator built into an interactive trading simulator.
-
-LIVE SIMULATOR STATE:
-  • GDP Growth: ${gdp.toFixed(1)}%
-  • Unemployment Rate: ${unemp.toFixed(1)}%
-  • Inflation: ${inf.toFixed(1)}%
-  • Macro Regime: ${result.regime.replace(/[\u{1F300}-\u{1FFFF}]/gu, '').trim()}
-  • Central Bank Stance: ${result.cbStance}
-  • Expected Rate Move: ${result.rateMove}
-  • Fiscal Stance: ${result.fiscalStance}
-
-CURRENT MARKET SIGNALS:
-${sigs}
-
-YOUR RULES:
-- Always explain WHY in simple, plain English — step by step cause and effect
-- Always reference the specific numbers above in your answer
-- Use real-world analogies to make mechanics click
-- Bold key terms using **word** markdown format
-- Keep answers concise: 3–5 paragraphs maximum
-- Never give specific trading advice or recommendations — you educate only
-- If asked about a term you defined in a previous message, keep it brief`;
-}
-
-async function sendAsk() {
-  if (!_apiKey) {
-    appendAssistantMsg('⚠️ Please enter your Anthropic API key above and click SAVE first.');
-    return;
-  }
-  const input = document.getElementById('ask-input');
-  const question = input.value.trim();
-  if (!question) return;
-
-  input.value = '';
-  input.style.height = 'auto';
-  appendUserMsg(question);
-  _chatMessages.push({ role: 'user', content: question });
-
-  const thinkId = appendThinking();
-  document.getElementById('ask-send-btn').disabled = true;
-
-  try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': _apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: buildSystemPrompt(),
-        messages: _chatMessages
-      })
-    });
-
-    removeThinking(thinkId);
-
-    if (!resp.ok) {
-      const errData = await resp.json().catch(() => ({}));
-      const msg = errData?.error?.message || `HTTP ${resp.status}`;
-      if (resp.status === 401) {
-        setApiStatus('error');
-        appendAssistantMsg('❌ API key rejected. Double-check your key at console.anthropic.com and save it again.');
-      } else {
-        appendAssistantMsg(`❌ API error: ${msg}`);
+    for (let m = 1; m <= totalMonths; m++) {
+      balance = balance * (1 + monthlyRate) + monthly;
+      totalDeposited += monthly;
+      if (m % 12 === 0) {
+        const yr = m / 12;
+        const dep = monthly * 12;
+        const interest = balance - prevBalance - dep;
+        labels.push('Yr ' + yr);
+        deposited.push(Math.round(totalDeposited));
+        portfolio.push(Math.round(balance));
+        yearlyInterest.push(Math.round(interest));
+        yearlyDeposit.push(dep);
+        prevBalance = balance;
       }
-      document.getElementById('ask-send-btn').disabled = false;
-      return;
     }
-
-    const data = await resp.json();
-    const reply = data?.content?.[0]?.text || 'No response received. Try again.';
-    appendAssistantMsg(reply);
-    _chatMessages.push({ role: 'assistant', content: reply });
-
-    // Keep history manageable (last 10 turns)
-    if (_chatMessages.length > 20) _chatMessages = _chatMessages.slice(-20);
-
-  } catch (err) {
-    removeThinking(thinkId);
-    appendAssistantMsg(`❌ Network error: ${err.message}. Make sure you have an internet connection and your key is correct.`);
+    return { labels, deposited, portfolio, yearlyInterest, yearlyDeposit };
   }
 
-  document.getElementById('ask-send-btn').disabled = false;
-}
-
-function askQuick(q) {
-  document.getElementById('ask-input').value = q;
-  // switch to ask why tab if not already there
-  const panel = document.getElementById('tab-askwhy');
-  if (!panel.classList.contains('active')) {
-    document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', i===2));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    panel.classList.add('active');
+  function updateStats(data) {
+    const finalBalance = data.portfolio[data.portfolio.length - 1];
+    const totalDep = data.deposited[data.deposited.length - 1];
+    const gains = finalBalance - totalDep;
+    const ret = ((gains / totalDep) * 100).toFixed(1);
+    document.getElementById('stat-deposited').textContent = fmt(totalDep);
+    document.getElementById('stat-balance').textContent = fmt(finalBalance);
+    document.getElementById('stat-gains').textContent = fmt(gains);
+    document.getElementById('stat-return').textContent = '+' + ret + '%';
   }
-  sendAsk();
-}
 
-function appendUserMsg(text) {
-  const h = document.getElementById('chat-history');
-  const d = document.createElement('div');
-  d.className = 'chat-msg user';
-  d.innerHTML = `<div class="msg-label">You</div><div class="msg-bubble">${escHtml(text)}</div>`;
-  h.appendChild(d);
-  h.scrollTop = h.scrollHeight;
-}
+  function updateTable(data) {
+    const body = document.getElementById('breakdown-body');
+    body.innerHTML = '';
+    for (let i = 0; i < data.labels.length; i++) {
+      const gains = data.portfolio[i] - data.deposited[i];
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>Year ${i + 1}</td>
+        <td>${fmt(data.yearlyDeposit[i])}</td>
+        <td>${fmt(data.deposited[i])}</td>
+        <td class="gains-cell">${fmt(data.yearlyInterest[i])}</td>
+        <td>${fmt(data.portfolio[i])}</td>
+        <td class="gains-cell">${fmt(gains)}</td>
+      `;
+      body.appendChild(tr);
+    }
+  }
 
-function appendAssistantMsg(text) {
-  const h = document.getElementById('chat-history');
-  const d = document.createElement('div');
-  d.className = 'chat-msg assistant';
-  const fmt = text
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n\n/g, '<br><br>')
-    .replace(/\n/g, '<br>');
-  d.innerHTML = `<div class="msg-label">MacroTrader AI</div><div class="msg-bubble">${fmt}</div>`;
-  h.appendChild(d);
-  h.scrollTop = h.scrollHeight;
-}
+  let currentData = calcData(100, 10, 10);
 
-function appendThinking() {
-  const h = document.getElementById('chat-history');
-  const id = 'think-' + Date.now();
-  const d = document.createElement('div');
-  d.className = 'chat-msg assistant'; d.id = id;
-  d.innerHTML = `<div class="msg-label">MacroTrader AI</div><div class="msg-bubble"><div class="thinking-dots"><span></span><span></span><span></span></div></div>`;
-  h.appendChild(d);
-  h.scrollTop = h.scrollHeight;
-  return id;
-}
-
-function removeThinking(id) {
-  const el = document.getElementById(id);
-  if (el) el.remove();
-}
-
-function escHtml(t) {
-  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-// Auto-resize textarea
-document.addEventListener('DOMContentLoaded', () => {
-  const ta = document.getElementById('ask-input');
-  if (ta) ta.addEventListener('input', () => {
-    ta.style.height = 'auto';
-    ta.style.height = Math.min(ta.scrollHeight, 100) + 'px';
+  const ctx = document.getElementById('growthChart').getContext('2d');
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: currentData.labels,
+      datasets: [
+        {
+          label: 'Portfolio value',
+          data: currentData.portfolio,
+          borderColor: '#00E5A0',
+          backgroundColor: 'rgba(0,229,160,0.08)',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 4,
+          pointBackgroundColor: '#00E5A0',
+          pointBorderColor: '#0A0C0F',
+          pointBorderWidth: 2,
+          borderWidth: 2.5
+        },
+        {
+          label: 'Total deposited',
+          data: currentData.deposited,
+          borderColor: '#3D4148',
+          backgroundColor: 'transparent',
+          fill: false,
+          tension: 0.1,
+          pointRadius: 2,
+          pointBackgroundColor: '#6B7280',
+          borderWidth: 1.5,
+          borderDash: [6, 4]
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#181C22',
+          borderColor: 'rgba(0,229,160,0.3)',
+          borderWidth: 1,
+          titleColor: '#F0EEE8',
+          bodyColor: '#9CA3AF',
+          padding: 12,
+          callbacks: {
+            label: (ctx) => ' ' + ctx.dataset.label + ': ' + fmt(ctx.parsed.y)
+          }
+        }
+      },
+      scales: {
+        y: {
+          ticks: {
+            callback: (v) => {
+              if (v >= 1000000) return '$' + (v/1000000).toFixed(1) + 'M';
+              if (v >= 1000) return '$' + Math.round(v/1000) + 'k';
+              return '$' + v;
+            },
+            color: '#6B7280',
+            font: { family: 'DM Mono, monospace', size: 11 }
+          },
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          border: { color: 'transparent' }
+        },
+        x: {
+          ticks: {
+            color: '#6B7280',
+            font: { family: 'DM Mono, monospace', size: 11 },
+            autoSkip: true,
+            maxTicksLimit: 20,
+            maxRotation: 45
+          },
+          grid: { display: false },
+          border: { color: 'transparent' }
+        }
+      }
+    }
   });
-  // Allow pressing Enter in API key input to save
-  const ki = document.getElementById('api-key-input');
-  if (ki) ki.addEventListener('keydown', e => { if (e.key === 'Enter') saveKey(); });
-});
 
-// Init
-update();
+  updateStats(currentData);
+  updateTable(currentData);
+
+  function update() {
+    const monthly = parseInt(document.getElementById('monthly-slider').value);
+    const rate = parseFloat(document.getElementById('rate-slider').value);
+    const years = parseInt(document.getElementById('years-slider').value);
+
+    document.getElementById('monthly-display').innerHTML = '$' + monthly.toLocaleString() + ' <span>/mo</span>';
+    document.getElementById('rate-display').innerHTML = rate + ' <span>% /yr</span>';
+    document.getElementById('years-display').innerHTML = years + ' <span>yr' + (years === 1 ? '' : 's') + '</span>';
+    document.getElementById('chart-title').textContent = years + '-Year Growth Curve';
+
+    const d = calcData(monthly, rate, years);
+    chart.data.labels = d.labels;
+    chart.data.datasets[0].data = d.portfolio;
+    chart.data.datasets[1].data = d.deposited;
+    chart.update();
+    updateStats(d);
+    updateTable(d);
+    currentData = d;
+  }
+
+  document.getElementById('monthly-slider').addEventListener('input', update);
+  document.getElementById('rate-slider').addEventListener('input', update);
+  document.getElementById('years-slider').addEventListener('input', update);
 </script>
 </body>
 </html>
